@@ -1,0 +1,50 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    container:
+      image: node:lts-buster-slim
+      options: -p 3000:3000
+
+    env:
+      CI: true
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build
+      run: npm install
+
+    - name: Test
+      run: ./jenkins/scripts/test.sh
+
+  deliver:
+    runs-on: ubuntu-latest
+    needs: build_and_test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deliver application
+      run: ./jenkins/scripts/deliver.sh
+
+    - name: Manual approval
+      run: |
+        echo "Finished using the web site? (Click 'Proceed' to continue)"
+        # Note: GitHub Actions does not have a native 'input' step for manual approval.
+        # This is a placeholder. You would need to use a third-party action or
+        # a different workflow pattern for manual intervention.
+
+    - name: Kill application
+      run: ./jenkins/scripts/kill.sh
